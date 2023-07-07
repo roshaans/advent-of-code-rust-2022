@@ -30,12 +30,19 @@ enum Move {
     Scissors,
 }
 
+#[derive(Debug, Clone)]
+enum Outcome {
+    Win,
+    Loss,
+    Tie,
+}
+
 impl From<&str> for Move {
     fn from(s: &str) -> Self {
         match s {
-            "A" | "X" => Move::Rock,
-            "B" | "Y" => Move::Paper,
-            "C" | "Z" => Move::Scissors,
+            "A" => Move::Rock,
+            "B" => Move::Paper,
+            "C" => Move::Scissors,
             _ => panic!("Invalid move"),
         }
     }
@@ -44,46 +51,39 @@ impl From<&str> for Move {
 pub fn calcualte_strategy_points(input: String) -> u64 {
     input
         .split('\n')
-        .map(|line| {
-            let whit_space = line.split_whitespace().collect::<Vec<&str>>();
-
-            println!("whit_space: {:?}", whit_space);
-            whit_space
-        })
+        .map(|line| line.split_whitespace().collect::<Vec<&str>>())
         .filter(|x| x.len() == 2)
-        .map(|x: Vec<&str>| {
-            let score = calc_score_player_two(x[0], x[1]);
-            println!("score: {:?}", score);
-            score
-        })
+        .map(|x: Vec<&str>| calc_score_player_two(x[0], x[1]))
         .sum()
 }
 
-fn calc_score_player_two(player_one_move_str: &str, player_two_move_str: &str) -> u64 {
+fn calc_score_player_two(player_one_move_str: &str, outcome: &str) -> u64 {
     let player_one_move = Move::from(player_one_move_str);
-    let player_two_move = Move::from(player_two_move_str);
 
-    let outcome = match (player_one_move, player_two_move.clone()) {
-        (Move::Rock, Move::Paper) => (0, 1),
-        (Move::Rock, Move::Scissors) => (1, 0),
-        (Move::Rock, Move::Rock) => (1, 1),
-        (Move::Paper, Move::Rock) => (1, 0),
-        (Move::Paper, Move::Scissors) => (0, 1),
-        (Move::Paper, Move::Paper) => (1, 1),
-        (Move::Scissors, Move::Rock) => (0, 1),
-        (Move::Scissors, Move::Paper) => (1, 0),
-        (Move::Scissors, Move::Scissors) => (1, 1),
-    };
-
-    let (player_one_outcome, player_two_outcome) = outcome;
-
-    let player_two_score = match (player_one_outcome, player_two_outcome) {
-        (1, 1) => 3,
-        (1, 0) => 0,
-        (0, 1) => 6,
+    let intended_outcome = match outcome {
+        "X" => Outcome::Loss,
+        "Y" => Outcome::Tie,
+        "Z" => Outcome::Win,
         _ => panic!("Invalid outcome"),
     };
 
+    let player_two_move = match (player_one_move, &intended_outcome) {
+        (Move::Rock, Outcome::Win) => Move::Paper,
+        (Move::Rock, Outcome::Tie) => Move::Rock,
+        (Move::Rock, Outcome::Loss) => Move::Scissors,
+        (Move::Paper, Outcome::Win) => Move::Scissors,
+        (Move::Paper, Outcome::Tie) => Move::Paper,
+        (Move::Paper, Outcome::Loss) => Move::Rock,
+        (Move::Scissors, Outcome::Win) => Move::Rock,
+        (Move::Scissors, Outcome::Tie) => Move::Scissors,
+        (Move::Scissors, Outcome::Loss) => Move::Paper,
+    };
+
+    let player_two_score = match intended_outcome {
+        Outcome::Loss => 0,
+        Outcome::Win => 6,
+        Outcome::Tie => 3,
+    };
     println!("player_two_score: {:?}", player_two_score);
     let player_two_move_score = Score::from(player_two_move) as u64;
     println!("player_two_move_score: {:?}", player_two_move_score);
@@ -99,34 +99,34 @@ mod test {
         let input = include_str!("../test.txt");
         println!("{:?}", input);
         let actual = calcualte_strategy_points(input.to_string());
-        let answer = 15;
+        let answer = 12;
         assert_eq!(answer, actual)
     }
 
     #[test]
-    fn rock_beats_scissors() {
+    fn lose_with_scissors() {
         let player_one_move = "C";
-        let player_two_move = "X";
-        let actual = calc_score_player_two(player_one_move, player_two_move);
-        let answer = 1 + 6;
+        let intended_outcome = "X";
+        let actual = calc_score_player_two(player_one_move, intended_outcome);
+        let answer = 2;
         assert_eq!(answer, actual)
     }
 
     #[test]
-    fn paper_beats_rock() {
+    fn tie_with_rock() {
         let player_one_move = "A";
-        let player_two_move = "Y";
-        let actual = calc_score_player_two(player_one_move, player_two_move);
-        let answer = 8;
-        assert_eq!(answer, actual)
-    }
-
-    #[test]
-    fn tie_score() {
-        let player_one_move = "A";
-        let player_two_move = "X";
-        let actual = calc_score_player_two(player_one_move, player_two_move);
+        let intended_outcome = "Y";
+        let actual = calc_score_player_two(player_one_move, intended_outcome);
         let answer = 4;
+        assert_eq!(answer, actual)
+    }
+
+    #[test]
+    fn win_with_rock() {
+        let player_one_move = "A";
+        let intended_outcome = "Z";
+        let actual = calc_score_player_two(player_one_move, intended_outcome);
+        let answer = 8;
         assert_eq!(answer, actual)
     }
 }
