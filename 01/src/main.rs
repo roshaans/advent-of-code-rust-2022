@@ -7,7 +7,7 @@ pub fn main() {
     let answer = calculate_max_group(input.clone());
     println!("answer: {answer}");
 
-    let answer_top_3 = calculate_top_3_max(input.clone());
+    let answer_top_3 = calculate_top_3_max(input);
 
     println!("answer top 3: {answer_top_3}");
 }
